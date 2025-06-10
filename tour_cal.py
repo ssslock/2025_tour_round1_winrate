@@ -50,13 +50,18 @@ def parse_participator_data(data_string):
 
 def calculate_win_rates(winner_counts, participator_counts):
     """
-    Calculates win rates for each item based on winner and participator counts.
+    Calculates win rates for all participants.
     Returns a list of dictionaries, sorted first by era (Early, Middle, Late)
     then by win rate in descending order.
     """
     win_rates = []
-    for item_name, wins in winner_counts.items():
-        participations = participator_counts.get(item_name, 0) # Get participations, default to 0 if not found
+
+    # Process all participants to ensure they are included, even with 0 wins
+    all_items = set(winner_counts.keys()).union(set(participator_counts.keys()))
+
+    for item_name in all_items:
+        wins = winner_counts.get(item_name, 0)
+        participations = participator_counts.get(item_name, 0)
 
         win_rate = 0.0
         status = "Calculated"
@@ -64,8 +69,12 @@ def calculate_win_rates(winner_counts, participator_counts):
             win_rate = (wins / participations) * 100
         else:
             status = "No participations recorded"
+            # If there are wins but no participations recorded, clarify status
             if wins > 0:
                 status = "Winner(s) but no participations recorded"
+            else: # If no wins and no participations, it's effectively not tracked
+                status = "No activity recorded"
+
 
         win_rates.append({
             "item": item_name,
@@ -281,7 +290,7 @@ win_rates = calculate_win_rates(winner_counts, participator_counts)
 
 # 4. Print the results
 print("--- Win Rates (Sorted by Win Rate) ---")
-print(f"{'Item':<25} | {'Wins':>5} | {'Participations':>14} | {'Win Rate (%)':>12} | Status")
+print(f"- {'Item':<25} | {'Wins':>5} | {'Participations':>14} | {'Win Rate (%)':>12} | Status")
 print("-" * 75)
 
 for result in win_rates:
@@ -292,9 +301,9 @@ for result in win_rates:
     status = result['status']
 
     if status == "Calculated":
-        print(f"{item:<25} | {wins:>5} | {participations:>14} | {win_rate:>11.2f}% | {status}")
+        print(f"- {item:<25} | {wins:>5} | {participations:>14} | {win_rate:>11.2f}% | {status}")
     else:
-        print(f"{item:<25} | {wins:>5} | {participations:>14} | {'N/A':>11}    | {status}")
+        print(f"- {item:<25} | {wins:>5} | {participations:>14} | {'N/A':>11}    | {status}")
 
 # Optionally, list items that participated but never won
 print("\n--- Items that Participated but Never Won ---")
