@@ -87,9 +87,9 @@ def calculate_win_rates(winner_counts, participator_counts, ban_counts):
 
     # Define the custom order for prefixes (Eras)
     prefix_sort_order = {
-        "Early": 1,
-        "Middle": 2,
-        "Late": 3
+        "EA": 1,
+        "MA": 2,
+        "LA": 3
     }
 
     # Sort results first by prefix order, then by win_rate (descending), then by item name
