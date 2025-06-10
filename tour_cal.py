@@ -7,9 +7,9 @@ def normalize_name(name):
     Handles prefixes (EA-, MA-, LA-) and specific name variations/typos.
     """
     # Standardize prefixes to full words
-    name = name.replace("LA-", "Late-")
-    name = name.replace("MA-", "Middle-")
-    name = name.replace("EA-", "Early-")
+    name = name.replace("Late-", "LA-")
+    name = name.replace("Middle-", "MA-")
+    name = name.replace("Early-", "EA-")
 
     # Handle specific name variations or known typos from both lists
     # name = name.replace("TNN", "TNN") # For Early-TNN
@@ -29,12 +29,12 @@ def parse_winner_data(item_list_string):
     items = [normalize_name(item.strip()) for item in item_list_string.strip().split('\n') if item.strip()]
     return Counter(items)
 
-def parse_participator_data(data_string):
+def parse_counter_data(data_string):
     """
-    Parses participator data from a string, normalizing names and
-    returning a dictionary of participator counts.
+    Parses counter data from a string, normalizing names and
+    returning a dictionary of counts.
     """
-    participator_counts = {}
+    counts = {}
     lines = data_string.strip().split('\n')
     for line in lines:
         if not line.strip(): # Skip empty lines
@@ -45,10 +45,10 @@ def parse_participator_data(data_string):
             raw_name = match.group(1).strip()
             count = int(match.group(2))
             normalized_name = normalize_name(raw_name)
-            participator_counts[normalized_name] = count
-    return participator_counts
+            counts[normalized_name] = count
+    return counts
 
-def calculate_win_rates(winner_counts, participator_counts):
+def calculate_win_rates(winner_counts, participator_counts, ban_counts):
     """
     Calculates win rates for all participants.
     Returns a list of dictionaries, sorted first by era (Early, Middle, Late)
@@ -57,11 +57,12 @@ def calculate_win_rates(winner_counts, participator_counts):
     win_rates = []
 
     # Process all participants to ensure they are included, even with 0 wins
-    all_items = set(winner_counts.keys()).union(set(participator_counts.keys()))
+    all_items = set(winner_counts.keys()).union(set(participator_counts.keys())).union(set(ban_counts.keys()))
 
     for item_name in all_items:
         wins = winner_counts.get(item_name, 0)
         participations = participator_counts.get(item_name, 0)
+        ban = ban_counts.get(item_name, 0)
 
         win_rate = 0.0
         status = "Calculated"
@@ -81,7 +82,7 @@ def calculate_win_rates(winner_counts, participator_counts):
             "wins": wins,
             "participations": participations,
             "win_rate": win_rate,
-            "status": status
+            "ban": ban
         })
 
     # Define the custom order for prefixes (Eras)
@@ -279,18 +280,56 @@ MA-Tien Chi 1
 MA-Uruk 1
 """
 
+ban_data = """
+EA-Ubar	27
+MA-Nidavangr	20
+LA-Pangaea	17
+LA-Andromania	14
+LA-Ctis	11
+MA-Man	10
+MA-Naba	9
+LA-Ragha	6
+LA-Ulm	4
+MA-Sceleria	4
+EA-Mekone	3
+EA-TNN	3
+EA-Yomi	3
+LA-Gath	3
+MA-Ashdod	3
+EA-Hinnom	2
+EA-Mictlan	2
+EA-Muspelheim	2
+EA-Niefelheim	2
+EA-Pangaea	2
+MA-Pangaea	2
+EA-Abysia	1
+EA-Caelum	1
+EA-Fomoria	1
+EA-Rus	1
+LA-Agartha	1
+LA-Caelum	1
+LA-Pyrene	1
+LA-Utgard	1
+LA-Vaettiheim	1
+MA-Ctis	1
+MA-Nazca	1
+"""
+
 # 1. Parse the winner data
 winner_counts = parse_winner_data(winner_data)
 
 # 2. Parse the participator data
-participator_counts = parse_participator_data(participator_data)
+participator_counts = parse_counter_data(participator_data)
 
-# 3. Calculate win rates
-win_rates = calculate_win_rates(winner_counts, participator_counts)
+# 3. Parse the ban data
+ban_counts = parse_counter_data(ban_data)
 
-# 4. Print the results
+# 4. Calculate win rates
+win_rates = calculate_win_rates(winner_counts, participator_counts, ban_counts)
+
+# 5. Print the results
 print("--- Win Rates (Sorted by Win Rate) ---")
-print(f"- {'Item':<25} | {'Wins':>5} | {'Participations':>14} | {'Win Rate (%)':>12} | Status")
+print(f"- {'Item':<25} | {'Wins':>5} | {'Participations':>14} | {'Win Rate (%)':>12} | Bans")
 print("-" * 75)
 
 for result in win_rates:
@@ -298,12 +337,9 @@ for result in win_rates:
     wins = result['wins']
     participations = result['participations']
     win_rate = result['win_rate']
-    status = result['status']
+    ban = result['ban']
 
-    if status == "Calculated":
-        print(f"- {item:<25} | {wins:>5} | {participations:>14} | {win_rate:>11.2f}% | {status}")
-    else:
-        print(f"- {item:<25} | {wins:>5} | {participations:>14} | {'N/A':>11}    | {status}")
+    print(f"- {item:<25} | {wins:>5} | {participations:>14} | {win_rate:>11.2f}% | {ban}")
 
 # Optionally, list items that participated but never won
 print("\n--- Items that Participated but Never Won ---")
